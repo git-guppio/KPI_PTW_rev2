@@ -231,7 +231,7 @@ class DBManager {
     }
 
     createPTWPivot(sourceTableName, newTableName) {
-        SQL_Create_Pivot := "
+/*         SQL_Create_Pivot := "
         (
             CREATE TABLE XXnewTableNameXX AS
             SELECT 
@@ -244,7 +244,24 @@ class DBManager {
             FROM XXsourceTableNameXX
             GROUP BY Ordine
             ORDER BY Ordine;
-        )"
+        )" */
+
+        SQL_Create_Pivot := "
+        (
+            CREATE TABLE XXnewTableNameXX AS
+            SELECT 
+                s.Ordine,
+                iw39."Tsto br." as "Testo breve",
+                COUNT(s."Op.") as "Totale Op.", 
+                SUM(s.PTW) as "Op. con PTW",
+                SUM(s.POP) as "PTW POP",
+                s."Stato sistema",
+                s."St.utente"            
+            FROM XXsourceTableNameXX s
+            LEFT JOIN IW39 iw39 ON s.Ordine = iw39.Ordine
+            GROUP BY s.Ordine
+            ORDER BY s.Ordine;
+        )"        
 
         SQL_Create_Pivot := StrReplace(SQL_Create_Pivot, "XXsourceTableNameXX", sourceTableName)
         SQL_Create_Pivot := StrReplace(SQL_Create_Pivot, "XXnewTableNameXX", newTableName)
@@ -259,6 +276,7 @@ class DBManager {
             CREATE TABLE XXnewTableNameXX AS
             SELECT 
                 Ordine,
+                "Testo breve"
                 "Totale Op.",
                 "Op. con PTW",
                 "Stato sistema",

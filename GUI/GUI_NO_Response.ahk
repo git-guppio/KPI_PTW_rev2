@@ -71,7 +71,7 @@ class MainGUI {
         this.MyMenuBar.Add("&File", this.FileMenu)
         this.FileMenu.Add("Esporta dati", this.ShowAbout)
         this.FileMenu.Add()
-        this.FileMenu.Add("Esci", (*) => ExitApp())
+        this.FileMenu.Add("Esci", (*) => CloseApp())
 
         ; Menu Modifica
         this.EditMenu := Menu()
@@ -89,6 +89,10 @@ class MainGUI {
         this.HelpMenu.Add("Help", this.ShowAbout)
         this.HelpMenu.Add("About Me", this.ShowInfo)
         this.MyMenuBar.Add("&Help", this.HelpMenu)
+
+        ; disattivo i menu che devono ancora essere implementati
+        this.HelpMenu.Disable("Help")
+        this.HelpMenu.Disable("About Me")
 
         ; imposto i menu che non devono essere attivi, devono attivarsi solo dopo l'estrazione dei dati
         this.FileMenu.Disable("Esporta dati")
@@ -892,6 +896,10 @@ class MainGUI {
             ; elimino i valori precedenti nelle finestre dettagli OdM e KPI
             this.Edit_DettagliOdM.SetText("")
             this.Edit_DettagliKPI.SetText("")
+            ; resetto lo stato della progress bar
+            this.ProgressBar.Value := 0
+            ; rendo inattivo il controllo per la modifica della data cardine
+            this.SetControlsState(MainGUI.controlsMap_CambiaDateSAP, false)
             ; elimino i valori presenti nella LV
             this.gui[MainGUI.CTRL_PREFIX_LV "ListView"].Delete()
             this.SetControlsState(MainGUI.controlsMap_LV, false)
@@ -1326,6 +1334,7 @@ class MainGUI {
             this.gui[MainGUI.CTRL_PREFIX_LV "btnCleanedData"].Opt("-Disabled")
             this.gui[MainGUI.CTRL_PREFIX_LV "btnPivot"].Opt("-Disabled")
             this.gui[MainGUI.CTRL_PREFIX_LV "btnSpostaOdM"].Opt("-Disabled")
+            this.SetControlsState(MainGUI.controlsMap_CambiaDateSAP, false) ; rendo inattivo il controllo per la modifica della data cardine           
             this.OnSelectionChange()    ; Modifico i menu visualizzati            
         } catch Error as err {        
             MsgBox("Errore: " . err.Message, "Errore", 16)
@@ -1348,6 +1357,7 @@ class MainGUI {
             this.gui[MainGUI.CTRL_PREFIX_LV "btnCleanedData"].Opt("+Disabled")
             this.gui[MainGUI.CTRL_PREFIX_LV "btnPivot"].Opt("-Disabled")
             this.gui[MainGUI.CTRL_PREFIX_LV "btnSpostaOdM"].Opt("-Disabled")
+            this.SetControlsState(MainGUI.controlsMap_CambiaDateSAP, false) ; rendo inattivo il controllo per la modifica della data cardine                       
             this.OnSelectionChange()    ; Modifico i menu visualizzati            
         } catch Error as err {        
             MsgBox("Errore: " . err.Message, "Errore", 16)
@@ -1370,6 +1380,7 @@ class MainGUI {
             this.gui[MainGUI.CTRL_PREFIX_LV "btnCleanedData"].Opt("-Disabled")
             this.gui[MainGUI.CTRL_PREFIX_LV "btnPivot"].Opt("-Disabled")
             this.gui[MainGUI.CTRL_PREFIX_LV "btnSpostaOdM"].Opt("+Disabled")
+            this.SetControlsState(MainGUI.controlsMap_CambiaDateSAP, false) ; rendo inattivo il controllo per la modifica della data cardine                       
             this.OnSelectionChange()    ; Modifico i menu visualizzati            
         } catch Error as err {        
             MsgBox("Errore: " . err.Message, "Errore", 16)
@@ -1393,6 +1404,7 @@ class MainGUI {
             this.gui[MainGUI.CTRL_PREFIX_LV "btnCleanedData"].Opt("-Disabled")
             this.gui[MainGUI.CTRL_PREFIX_LV "btnPivot"].Opt("+Disabled")
             this.gui[MainGUI.CTRL_PREFIX_LV "btnSpostaOdM"].Opt("-Disabled")
+            this.SetControlsState(MainGUI.controlsMap_CambiaDateSAP, false) ; rendo inattivo il controllo per la modifica della data cardine                       
             this.OnSelectionChange()    ; Modifico i menu visualizzati            
         } catch Error as err {        
             MsgBox("Errore: " . err.Message, "Errore", 16)
@@ -1414,6 +1426,7 @@ class MainGUI {
             this.gui[MainGUI.CTRL_PREFIX_LV "btnCleanedData"].Opt("-Disabled")
             this.gui[MainGUI.CTRL_PREFIX_LV "btnPivot"].Opt("+Disabled")
             this.gui[MainGUI.CTRL_PREFIX_LV "btnSpostaOdM"].Opt("-Disabled")
+            this.SetControlsState(MainGUI.controlsMap_CambiaDateSAP, false) ; rendo inattivo il controllo per la modifica della data cardine                       
             this.OnSelectionChange()    ; Modifico i menu visualizzati            
         } catch Error as err {        
             MsgBox("Errore: " . err.Message, "Errore", 16)
@@ -1485,7 +1498,13 @@ class MainGUI {
     }
 
     ShowAbout(*) {
-        OutputDebug("TEST")
+
+    }
+
+    CloseApp(*){
+        ; chiudo il DB
+        this.CloseDB()
+        ExitApp()        
     }
 
 }

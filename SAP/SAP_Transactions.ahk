@@ -235,16 +235,14 @@ class SAP_Transactions {
     ; Restituisce: Il numero di OdM modificati
     static IW32(Lista_OdM, dataInizio, dataFine, ProgressBar, SB) {
         OdMTotali := Lista_OdM.Length
+        ProgressBar.Value := 0 ; resetto lo stato della progress bar
         ProgressBar.Opt("+Range0-" . OdMTotali)
         if (OdMTotali > 0) { ; Verifico che la lista contenga elementi
             ; *** Creo una connessione SAP
             SB.SetText("Attivo connessione SAP")
             session := SAPConnection.GetSession()
             if (session) {
-                try {
-                        isRunning := true
-                        ; Imposta il timer per controllare l'interruzione ogni 100ms
-                        ;timer := SetTimer(CheckInterrupt, 100)							
+                try {						
                         for OdM in Lista_OdM {
                             OutputDebug(OdM . "`n")
                             session.findById("wnd[0]/tbar[0]/okcd").text := "/nIW32"
@@ -301,7 +299,6 @@ class SAP_Transactions {
                                 }
                             }
                             ; salvo
-
                             session.findById("wnd[0]/tbar[0]/btn[11]").press
                             OutputDebug("Salvo OdM...`n")
                             SB.SetText("Salvo OdM...")
@@ -360,8 +357,6 @@ class SAP_Transactions {
                         ProgressBar.Value := 0
                         return 0
                     } finally {
-                        ;SetTimer(CheckInterrupt, 0)
-                        isRunning := false
                         SAPConnection.Disconnect()
                     }
             } else {
