@@ -128,7 +128,7 @@ class DBManager {
                 "CLavResp",
                 "ChTstStd",
                 "Stato sistema",
-                "St.utente"
+                COALESCE("St.utente", "Stato utente") as "St.utente"
             FROM XXsourceTableNameXX 
             WHERE NOT (("Stato sistema" LIKE '%APER%')
                OR ("Stato sistema" LIKE '%FCAN%')

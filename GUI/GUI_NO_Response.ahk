@@ -31,7 +31,7 @@ class MainGUI {
     CreateGUI() {
         this.gui := Gui("+Resize +MinimizeBox +MaximizeBox")
         this.gui.Title := "Dashboard KPI PTW"
-        this.CreateMenus()
+
         ; imposto i margini
         this.gui.MarginX := MainGUI.MARGINS.x
         this.gui.MarginY := MainGUI.MARGINS.y
@@ -59,7 +59,9 @@ class MainGUI {
         for icon in icons {
             IL_Add(this.imageListID, "shell32.dll", icon)
         }
-        
+        ; crea un menu
+        this.CreateMenus()
+
         this.gui.OnEvent("Size", this.OnSize.Bind(this))
     }
 
@@ -69,9 +71,9 @@ class MainGUI {
         ; Menu File
         this.FileMenu := Menu()
         this.MyMenuBar.Add("&File", this.FileMenu)
-        this.FileMenu.Add("Esporta dati", this.ShowAbout)
+        this.FileMenu.Add("Esporta dati", (*) => this.ExportListViewToCSV(this.gui.LV))
         this.FileMenu.Add()
-        this.FileMenu.Add("Esci", (*) => CloseApp())
+        this.FileMenu.Add("Esci", (*) => this.CloseApp())
 
         ; Menu Modifica
         this.EditMenu := Menu()
