@@ -11,8 +11,8 @@ global G_CONSTANTS := {
     ESTRAZIONI_SAP: ["AdM", "OdM", "SicuAmbi", "Ptw"],
     DB_FILENAME: A_ScriptDir . "\PTW.DB",
     ;STATI_PTW: ["WAHO", "WIP", "PH", "TEST", "WOC", "WPHB", "INOP", "OP", "IP", "WRELI", "WREL", "POP"],
-    STATI_PTW: ["WIP", "PH", "TEST", "WOC", "WPHB", "INOP", "POP"],
-    STATI_PTW_2026: ["WAHO", "OP", "IP", "WRELI", "WREL"],
+    ; Nuovi stati per il calcolo del KPI 2026, escludendo quelli che non sono più rilevanti:
+    STATI_PTW: ["WIP", "POP", "PH", "TEST", "WPHB", "WOC", "INOP"],
     TABLE_NAME_ODM_LIST: "IW39",
     TABLE_NAME_RAW_DATA: "IW49N",
     TABLE_NAME_CLEAN_DATA: "CleanData",
@@ -21,7 +21,7 @@ global G_CONSTANTS := {
     TABLE_NAME_PTW_PIVOT: "Pivot",
     TABLE_NAME_ODM_SENZA_PTW: "OdMSenzaPTW",
     DEBUG_MODE: false,
-    TARGET_KPI: 80,
+    TARGET_KPI: 85,
     COLOR : Map(
         "SOFT_BLUE", 0xE1B094,     ; Azzurro medio
         "SAGE", 0x9CDBB2,          ; Verde salvia

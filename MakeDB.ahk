@@ -115,11 +115,18 @@ class DBManager {
         }
     }
     
+    ; Inserite nuove regole per escludere OdM che hanno stato utente:
+    ; - ORPA
+    ; - CONT
+
     createFilteredTable(sourceTableName, newTableName) {
+        ; Rileva il nome reale della colonna stato utente (SAP può restituirla con nomi diversi)
+        colStato := this._getColStato(sourceTableName)
+
         SQL_Table_OdM_filtrati := "
         (
-            CREATE TABLE XXnewTableNameXX AS 
-            SELECT 
+            CREATE TABLE XXnewTableNameXX AS
+            SELECT
                 Ordine,
                 "Op.",
                 "Operazione testo breve",
@@ -128,18 +135,33 @@ class DBManager {
                 "CLavResp",
                 "ChTstStd",
                 "Stato sistema",
-                COALESCE("St.utente", "Stato utente") as "St.utente"
-            FROM XXsourceTableNameXX 
+                "XXcolStatoXX" as "St.utente"
+            FROM XXsourceTableNameXX
             WHERE NOT (("Stato sistema" LIKE '%APER%')
                OR ("Stato sistema" LIKE '%FCAN%')
-               OR ("Stato sistema" LIKE '%BLOC%'));
+               OR ("Stato sistema" LIKE '%BLOC%')
+               OR ("XXcolStatoXX" LIKE '%ORPA%')
+               OR ("XXcolStatoXX" LIKE '%CONT%'));
         )"
 
         SQL_Table_OdM_filtrati := StrReplace(SQL_Table_OdM_filtrati, "XXsourceTableNameXX", sourceTableName)
         SQL_Table_OdM_filtrati := StrReplace(SQL_Table_OdM_filtrati, "XXnewTableNameXX", newTableName)
+        SQL_Table_OdM_filtrati := StrReplace(SQL_Table_OdM_filtrati, "XXcolStatoXX", colStato)
 
         if !this.db.Exec(SQL_Table_OdM_filtrati)
             throw Error("Error creating filtered table: " . this.db.ErrorMsg)
+    }
+
+    ; Restituisce il nome reale della colonna stato utente nella tabella indicata.
+    ; SAP può esportarla come "St.utente" o "Stato utente" a seconda del layout.
+    _getColStato(tableName) {
+        if !this.db.GetTable("PRAGMA table_info(" . tableName . ");", &info)
+            throw Error("Impossibile leggere la struttura di " . tableName . ": " . this.db.ErrorMsg)
+        for row in info.Rows {
+            if (row[2] = "St.utente" || row[2] = "Stato utente")
+                return row[2]
+        }
+        throw Error("Colonna stato utente non trovata in " . tableName . " (atteso 'St.utente' o 'Stato utente')")
     }
     
     addPTWColumn(tableName, stati_PTW) {
