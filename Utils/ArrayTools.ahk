@@ -134,16 +134,29 @@ class ArrayTools {
             clipboardContent := A_Clipboard
             ; Divide il contenuto in linee
             lines := StrSplit(clipboardContent, "`n", "`r")
-            ; Ottiene il numero di campi dalla riga di intestazione (header) [seconda riga]
-            expectedFields := StrSplit(lines[2], "|").Length
+            ; Rileva dinamicamente la riga di intestazione: prima riga con delimitatori |
+            ; Compatibile con vecchio formato SAP (intestazione a riga 2)
+            ; e nuovo formato SAP (riga titolo + doppio separatore prima dell'intestazione)
+            expectedFields := 0
+            for line in lines {
+                if RegExMatch(line, "^\|.*\|$") {
+                    expectedFields := StrSplit(line, "|").Length
+                    break
+                }
+            }
+            if (expectedFields = 0) {
+                MsgBox("Intestazione non trovata nella clipboard.", "Errore", 4112)
+                return false
+            }
             ; Inizializza un array per i codici FL
             Arr := [] ; ogni elemento dell'array è un array contenente gli elementi della riga
             ; Estrae i codici paese
             for line in lines {
                 if (raw = false) {
-                    if (line != "") and !InStr(line, "-----------") { ; rimuovo le righe vuote e le righe composte da trattini
+                    ; Processa solo righe pipe-delimited (intestazione e dati); ignora separatori, titolo e righe vuote
+                    if RegExMatch(line, "^\|.*\|$") {
                         parts := StrSplit(line, "|")
-                        if (parts.Length = expectedFields) { ; verifico che tutte le righe siano costituite dallo stesso numero di campi contenuti nell'intestazione
+                        if (parts.Length = expectedFields) { ; verifico che tutte le righe siano costituite dallo stesso numero di campi dell'intestazione
                             Arr.Push(parts)
                         }
                         else {

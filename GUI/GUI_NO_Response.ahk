@@ -950,8 +950,8 @@ class MainGUI {
                 ; Inizializza il database (elimina quello esistente)
                 this.MyDB := DBManager(G_CONSTANTS.DB_FILENAME, initialize := true)
 
-                ; Parsa i dati
-                data := DataParser.parseArray(arrDati)
+                ; Parsa i dati normalizzando le intestazioni con i nomi canonici IW39
+                data := DataParser.parseArray(arrDati, G_CONSTANTS.IW39_FIELD_MAP)
                 ; Crea la tabella contenente la lista degli OdM estratta con la IW39
                 this.MyDB.createTable(data, G_CONSTANTS.TABLE_NAME_ODM_LIST, ["Ordine"])
                 ; Ricavo la lista degli OdM da utilizzare con la successiva estrazione IW49N

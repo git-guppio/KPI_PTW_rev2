@@ -120,8 +120,7 @@ class DBManager {
     ; - CONT
 
     createFilteredTable(sourceTableName, newTableName) {
-        ; Rileva il nome reale della colonna stato utente (SAP può restituirla con nomi diversi)
-        colStato := this._getColStato(sourceTableName)
+        ; La colonna stato utente è sempre "St.utente" grazie alla normalizzazione dei nomi canonici
 
         SQL_Table_OdM_filtrati := "
         (
@@ -135,33 +134,20 @@ class DBManager {
                 "CLavResp",
                 "ChTstStd",
                 "Stato sistema",
-                "XXcolStatoXX" as "St.utente"
+                "St.utente"
             FROM XXsourceTableNameXX
             WHERE NOT (("Stato sistema" LIKE '%APER%')
                OR ("Stato sistema" LIKE '%FCAN%')
                OR ("Stato sistema" LIKE '%BLOC%')
-               OR ("XXcolStatoXX" LIKE '%ORPA%')
-               OR ("XXcolStatoXX" LIKE '%CONT%'));
+               OR ("St.utente" LIKE '%ORPA%')
+               OR ("St.utente" LIKE '%CONT%'));
         )"
 
         SQL_Table_OdM_filtrati := StrReplace(SQL_Table_OdM_filtrati, "XXsourceTableNameXX", sourceTableName)
         SQL_Table_OdM_filtrati := StrReplace(SQL_Table_OdM_filtrati, "XXnewTableNameXX", newTableName)
-        SQL_Table_OdM_filtrati := StrReplace(SQL_Table_OdM_filtrati, "XXcolStatoXX", colStato)
 
         if !this.db.Exec(SQL_Table_OdM_filtrati)
             throw Error("Error creating filtered table: " . this.db.ErrorMsg)
-    }
-
-    ; Restituisce il nome reale della colonna stato utente nella tabella indicata.
-    ; SAP può esportarla come "St.utente" o "Stato utente" a seconda del layout.
-    _getColStato(tableName) {
-        if !this.db.GetTable("PRAGMA table_info(" . tableName . ");", &info)
-            throw Error("Impossibile leggere la struttura di " . tableName . ": " . this.db.ErrorMsg)
-        for row in info.Rows {
-            if (row[2] = "St.utente" || row[2] = "Stato utente")
-                return row[2]
-        }
-        throw Error("Colonna stato utente non trovata in " . tableName . " (atteso 'St.utente' o 'Stato utente')")
     }
     
     addPTWColumn(tableName, stati_PTW) {
@@ -383,61 +369,103 @@ class DBManager {
 }
 
 class DataParser {
-    static parseFile(filePath) {
+    static parseFile(filePath, fieldMap := "") {
         try {
             fileContent := FileRead(filePath)
-            return DataParser.parseContent(StrSplit(fileContent, "`n", "`r"))
+            return DataParser.parseContent(StrSplit(fileContent, "`n", "`r"), fieldMap)
         } catch Error as err {
             throw Error("Error reading file: " . err.Message)
         }
     }
-    
-    static parseArray(inputArray) {
-        return DataParser.parseContent(inputArray)
+
+    static parseArray(inputArray, fieldMap := "") {
+        return DataParser.parseContent(inputArray, fieldMap)
+    }
+
+    ; Normalizza le intestazioni ricevute dal file SAP sostituendo ogni titolo
+    ; con il nome canonico definito in fieldMap.
+    ; Le colonne non presenti in fieldMap vengono mantenute invariate (fallback).
+    static NormalizzaIntestazioni(intestazioni, fieldMap) {
+        result := []
+        for titolo in intestazioni {
+            canonico := titolo
+            for fieldName, entry in fieldMap {
+                trovato := false
+                for t in entry.titles {
+                    if (t = titolo) {
+                        trovato := true
+                        break
+                    }
+                }
+                if trovato {
+                    canonico := entry.canonical
+                    break
+                }
+            }
+            result.Push(canonico)
+        }
+        return result
     }
     
-    static parseContent(lines) {
+    static parseContent(lines, fieldMap := "") {
         result := {intestazione: [], record: {}}
-        
-        ; Filtra le righe valide
+
+        ; Filtra le righe valide (rimuove vuote e separatori ---)
         validLines := []
         for line in lines {
             if (line != "" && !RegExMatch(line, "^-+$"))
                 validLines.Push(line)
         }
-        
+
         if (validLines.Length < 2)
             throw Error("Malformed data: insufficient valid lines")
-            
-        ; Processa intestazioni
-        headerLine := validLines[1]
-        if (!RegExMatch(headerLine, "^\|.*\|$"))
+
+        ; Rileva dinamicamente la prima riga pipe-delimited come intestazione.
+        ; Compatibile con vecchio formato SAP (intestazione = prima riga valida)
+        ; e nuovo formato SAP (prima riga valida = titolo, intestazione = seconda riga valida).
+        headerIdx := 0
+        headerLine := ""
+        for i, line in validLines {
+            if RegExMatch(line, "^\|.*\|$") {
+                headerIdx := i
+                headerLine := line
+                break
+            }
+        }
+        if (headerIdx = 0)
             throw Error("Header format error: missing | delimiters")
-            
+
         headerParts := StrSplit(Trim(headerLine, "|"), "|")
         for part in headerParts
             result.intestazione.Push(Trim(part))
-            
-        ; Processa record
+
+        ; Normalizza i nomi delle colonne verso i nomi canonici definiti in fieldMap.
+        ; Se fieldMap non è passato, le intestazioni restano invariate.
+        if (fieldMap != "")
+            result.intestazione := DataParser.NormalizzaIntestazioni(result.intestazione, fieldMap)
+
+        ; Processa record: salta tutte le righe fino all'intestazione inclusa
         mapRecord := Map()
+        recordIdx := 0
         for i, line in validLines {
-            if (i = 1) ; salta la riga di intestazione
+            if (i <= headerIdx)
                 continue
-                
+
             if (!RegExMatch(line, "^\|.*\|$"))
                 continue
-                
+
             fields := StrSplit(Trim(line, "|"), "|")
             if (fields.Length != result.intestazione.Length)
                 continue
-                
+
             arr := []
             for field in fields
                 arr.Push(Trim(field))
-                
-            mapRecord[i-1] := arr
+
+            recordIdx++
+            mapRecord[recordIdx] := arr
         }
-        
+
         result.record := mapRecord
         return result
     }
@@ -455,8 +483,8 @@ class DataParser {
             ; Inizializza il database
             dbManager := DBManager(dB_Path)
             
-            ; Parsa i dati
-            data := DataParser.parseFile(exportFileName)
+            ; Parsa i dati normalizzando le intestazioni con i nomi canonici IW49N
+            data := DataParser.parseFile(exportFileName, G_CONSTANTS.IW49N_FIELD_MAP)
             
             ; Crea la tabella principale
             dbManager.createTable(data, "IW49", ["Ordine", "Op."])

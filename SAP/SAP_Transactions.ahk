@@ -97,9 +97,21 @@ class SAP_Transactions {
                 }                
                 ; ripristino il contenuto della Clipboard
                 A_Clipboard := Temp_Clipboard
-                ; conto il numero di elementi per confrontarlo con quello dei valori presenti in tabella
-                numeroDiElementArray := resultArray.Length
-                rawData ? numeroDiElementArray:= numeroDiElementArray - 3 : numeroDiElementArray
+                ; Conta le righe dati (pipe-delimited) escludendo l'intestazione.
+                ; Approccio dinamico: compatibile con vecchio formato SAP (sep+header+sep)
+                ; e nuovo formato SAP (titolo+sep+sep+header+sep) senza dipendere da un offset fisso.
+                headerFound := false
+                numeroDiElementArray := 0
+                for line in resultArray {
+                    if !headerFound {
+                        if RegExMatch(line, "^\|.*\|$")
+                            headerFound := true
+                    } else {
+                        if RegExMatch(line, "^\|.*\|$")
+                            numeroDiElementArray++
+                    }
+                }
+                numeroDiElementArray++ ; include la riga di intestazione come fa grid.RowCount + 1
                 grid := session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell")
                 ; verifico il numero di risultati ottenuti
                 tableRowCount := grid.RowCount + 1 ; aggiungo la riga di intestazione che non viene conteggiata
@@ -108,13 +120,13 @@ class SAP_Transactions {
                 if (numeroDiElementArray != tableRowCount)
                     throw Error("Errore nell'estrazione dei dati.")
                 else
-                    return resultArray   
+                    return resultArray
             } catch as err {
                 MsgBox("Errore nell'esecuzione dell'azione SAP: " err.Message, "Errore", 4112)
                 return false
             } finally {
                 SAPConnection.Disconnect()
-            } 
+            }
         }
         else {
             MsgBox("Impossibile ottenere una sessione SAP valida.", "Errore", 4112)
@@ -212,9 +224,21 @@ class SAP_Transactions {
                 }                
                 ; ripristino il contenuto della Clipboard
                 A_Clipboard := Temp_Clipboard
-                ; conto il numero di elementi per confrontarlo con quello dei valori presenti in tabella
-                numeroDiElementArray := resultArray.Length
-                rawData ? numeroDiElementArray:= numeroDiElementArray - 3 : numeroDiElementArray
+                ; Conta le righe dati (pipe-delimited) escludendo l'intestazione.
+                ; Approccio dinamico: compatibile con vecchio formato SAP (sep+header+sep)
+                ; e nuovo formato SAP (titolo+sep+sep+header+sep) senza dipendere da un offset fisso.
+                headerFound := false
+                numeroDiElementArray := 0
+                for line in resultArray {
+                    if !headerFound {
+                        if RegExMatch(line, "^\|.*\|$")
+                            headerFound := true
+                    } else {
+                        if RegExMatch(line, "^\|.*\|$")
+                            numeroDiElementArray++
+                    }
+                }
+                numeroDiElementArray++ ; include la riga di intestazione come fa grid.RowCount + 1
                 grid := session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell")
                 ; verifico il numero di risultati ottenuti
                 tableRowCount := grid.RowCount + 1 ; aggiungo la riga di intestazione che non viene conteggiata
@@ -223,13 +247,13 @@ class SAP_Transactions {
                 if (numeroDiElementArray != tableRowCount)
                     throw Error("Errore nell'estrazione dei dati.")
                 else
-                    return resultArray   
+                    return resultArray
             } catch as err {
                 MsgBox("Errore nell'esecuzione dell'azione SAP: " err.Message, "Errore", 4112)
                 return false
             } finally {
                 SAPConnection.Disconnect()
-            }            
+            }
         }
         else {
             MsgBox("Impossibile ottenere una sessione SAP valida.", "Errore", 4112)
