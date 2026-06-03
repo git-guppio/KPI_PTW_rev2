@@ -944,11 +944,12 @@ class MainGUI {
                 dataFine := Format("{:02d}.{:02d}.{:02d}", giornoFinale, meseNum, Mod(annoNum, 100))
                 OutputDebug("Data inizio: " . dataInizio . " - Data fine: " . dataFine . " - " . this.gui[MainGUI.CTRL_PREFIX_SAP . "ddlImpianto"].Text . "`n")
                 
+                ; Inizializza il database (elimina quello esistente)
+                this.MyDB := DBManager(G_CONSTANTS.DB_FILENAME, initialize := true)
+
                 ; estraggo i dati da SAP e creo un array
                 this.SB.SetText("Eseguo transazione IW39")
                 arrDati := SAP_Transactions.IW39(this.gui[MainGUI.CTRL_PREFIX_SAP . "ddlImpianto"].Text, dataInizio, dataFine)
-                ; Inizializza il database (elimina quello esistente)
-                this.MyDB := DBManager(G_CONSTANTS.DB_FILENAME, initialize := true)
 
                 ; Parsa i dati normalizzando le intestazioni con i nomi canonici IW39
                 data := DataParser.parseArray(arrDati, G_CONSTANTS.IW39_FIELD_MAP)
@@ -958,8 +959,8 @@ class MainGUI {
                 listaOdM := this.MyDB.GetOrdersList()
                 this.SB.SetText("Eseguo transazione IW49")
                 arrDati := SAP_Transactions.IW49N(listaOdM)
-                ; Parsa i dati
-                data := DataParser.parseArray(arrDati)
+                ; Parsa i dati normalizzando le intestazioni con i nomi canonici IW49N
+                data := DataParser.parseArray(arrDati, G_CONSTANTS.IW49N_FIELD_MAP)
                 ; Crea la tabella principale
                 this.MyDB.createTable(data, G_CONSTANTS.TABLE_NAME_RAW_DATA, ["Ordine", "Op."])
                 ; --- Parte di visualizzazione dei dati indipendente dalla parte di recupero dei dati ---

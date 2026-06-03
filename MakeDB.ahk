@@ -384,23 +384,37 @@ class DataParser {
 
     ; Normalizza le intestazioni ricevute dal file SAP sostituendo ogni titolo
     ; con il nome canonico definito in fieldMap.
-    ; Le colonne non presenti in fieldMap vengono mantenute invariate (fallback).
+    ; Se un titolo non è presente in nessuna entry della fieldMap, mostra un errore
+    ; bloccante: l'importazione non prosegue con nomi di colonna errati.
     static NormalizzaIntestazioni(intestazioni, fieldMap) {
         result := []
         for titolo in intestazioni {
-            canonico := titolo
+            canonico := ""
+            trovatoEsterno := false
             for fieldName, entry in fieldMap {
-                trovato := false
+                trovatoInterno := false
                 for t in entry.titles {
                     if (t = titolo) {
-                        trovato := true
+                        trovatoInterno := true
                         break
                     }
                 }
-                if trovato {
+                if trovatoInterno {
                     canonico := entry.canonical
+                    trovatoEsterno := true
                     break
                 }
+            }
+            if !trovatoEsterno {
+                MsgBox(
+                    "Errore nella normalizzazione delle colonne.`n`n"
+                    . "Colonna SAP non presente nella field map:`n"
+                    . "  '" . titolo . "'`n`n"
+                    . "Aggiornare IW39_FIELD_MAP o IW49N_FIELD_MAP`n"
+                    . "in GlobalConstants.ahk aggiungendo il titolo mancante.",
+                    "Errore normalizzazione colonne", 16 + 4096
+                )
+                throw Error("Colonna non mappata: '" . titolo . "'")
             }
             result.Push(canonico)
         }
@@ -470,50 +484,6 @@ class DataParser {
         return result
     }
 
-    /**
-     * Gestisce la creazione del DB, utilizzando i metodi precedentemente definiti, leggendo i dati da un file
-     * @param dB_Path Il percorso del file da utilizzare per creare il DB
-     * @param exportFileName Il percorso completo del file da leggere
-     * @param stati_PTW gli stati che determinano se un OdM ha un ptw associato 
-     * @throws Error Se ci sono problemi nelle operazioni nel DB
-     */
-    ManageDB_File(dB_Path, exportFileName, stati_PTW) {
-       
-        try {
-            ; Inizializza il database
-            dbManager := DBManager(dB_Path)
-            
-            ; Parsa i dati normalizzando le intestazioni con i nomi canonici IW49N
-            data := DataParser.parseFile(exportFileName, G_CONSTANTS.IW49N_FIELD_MAP)
-            
-            ; Crea la tabella principale
-            dbManager.createTable(data, "IW49", ["Ordine", "Op."])
-            
-            ; Crea le tabelle derivate e calcola le statistiche
-            dbManager.createFilteredTable()
-            dbManager.addPTWColumn(stati_PTW)
-            dbManager.createPTWPivot()
-            
-            ; Ottieni e mostra le statistiche
-            stats := dbManager.getPTWStats()
-            if stats.HasRows {
-                row := stats.Rows[1]
-                OutputDebug(
-                    "Analisi OdM con PTW:`n" .
-                    "------------------------`n" .
-                    "OdM con PTW: " . row[1] . "`n" .
-                    "OdM senza PTW: " . row[2] - row[1] . "`n" . 
-                    "Totale OdM: " . row[2] . "`n" .
-                    "Percentuale: " . row[3] . "%"
-                )
-            }
-            
-        } catch Error as err {
-                throw Error("Errore nella scrittura del file: " . err.Message)
-        } finally {
-            dbManager.close()
-        }
-    }
 }
 
 class DataView {

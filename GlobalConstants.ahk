@@ -53,7 +53,7 @@ global G_CONSTANTS := {
         "GEWRK", {canonical: "CLavResp",                       titles: ["Centro lav. respons.",         "Centro LavResp.",         "CLavResp",     "CLavResp"                     ]},
         "GKSTI", {canonical: "CstTotEff.",                     titles: ["Costi tot. effettivi",         "Costi tot. eff.",         "CstTotEff.",   "CstTotEff."                   ]},
         "GKSTP", {canonical: "Cst.tot.p.",                     titles: ["Costi totali pian.",           "Costi tot.pian.",         "Tot.cst.m.",   "Cst.tot.p."                   ]},
-        "GLTRP", {canonical: "Fine base",                      titles: ["Data di fine di base",         "Data fine base",          "Fine base",    "Data di fine di base"         ]},
+        "GLTRP", {canonical: "Fine card.",                      titles: ["Data di fine di base",         "Data fine base",          "Fine base",    "Data di fine di base",  "Fine card."]},
         "GLTRS", {canonical: "Fine sched",                     titles: ["Fine schedulata",              "Fine schedulata",         "Fine sched",   "Fine schedulata"              ]},
         "GSTRP", {canonical: "In. card.",                      titles: ["Data inizio cardine",          "Data in. card.",          "In. card.",    "Data inizio cardine"          ]},
         "ILART", {canonical: "TAM",                            titles: ["Tipo di att. di man.",         "Tp. attività PM",         "Tp.att.PM",    "TAM"                          ]},
