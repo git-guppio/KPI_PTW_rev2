@@ -126,7 +126,13 @@ class SAP_Transactions {
     ; Descrizione: Estrae la lista degli OdM relativi all'intervallo specificato in data inizio cardine
     ; Parametri: Nessuno
     ; Restituisce: Copia la tabella nella clipboard
-    static IW39(Plant, dataInizio, dataFine) {
+    static IW39(plant, dataInizio, dataFine) {
+
+        ; *** Tabella di mapping per gestire le sedi tecniche GAS ***
+        if (plant = "FS") {
+            plant := "FS-7*"
+        }
+
         session := SAPConnection.GetSession()
         if (session) {
             try {
@@ -137,7 +143,9 @@ class SAP_Transactions {
                 session.findById("wnd[0]/usr/chkDY_IAR").selected := True
                 session.findById("wnd[0]/usr/chkDY_MAB").selected := True
                 session.findById("wnd[0]/usr/chkDY_HIS").selected := True
+                ; imposto il valore della sede tecnica
                 session.findById("wnd[0]/usr/ctxtSTRNO-LOW").text := plant . "*"
+                ; rimuovo i valori di default dalle date periodo
                 session.findById("wnd[0]/usr/ctxtDATUV").text := ""
                 session.findById("wnd[0]/usr/ctxtDATUB").text := ""
                 session.findById("wnd[0]/usr/ctxtGSTRP-LOW").text := dataInizio
