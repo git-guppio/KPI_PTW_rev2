@@ -355,7 +355,8 @@ class SAP_Transactions {
                                     }
                                 }
                                 ; verifico msg di errore <Determ. costi>
-                                else if WinExist("Informazione") {
+                                ; Modificato da "Informazione" a "Informazioni"
+                                else if WinExist("Informazioni") {
                                     WinActivate ; Use the window found by WinExist.
                                     session.findById("wnd[1]/tbar[0]/btn[0]").press
                                     Sleep 500  ; Attendi prima di controllare di nuovo
